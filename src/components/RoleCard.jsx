@@ -49,6 +49,12 @@ export default function RoleCard({ roomId, secret, timeLeft, isHost }) {
                 <p className="text-slate-400 mt-2 max-w-md">
                     O‘quvchilar o‘z ekranlaridagi maxfiy kartani o‘qib olishmoqda. Yon atrofga qaramang!
                 </p>
+                <button
+                    onClick={() => supabase.rpc('advance_phase', { p_room_id: roomId })}
+                    className="mt-6 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm rounded cursor-pointer"
+                >
+                    Tunni boshlash →
+                </button>
             </div>
         );
     }

@@ -91,24 +91,28 @@ export function useRoomSync(roomId, userId) {
             });
     }, [room?.phase, roomId, userId]);
 
-    // Taymer hisoblagichi va Host uchun avtomatik bosqich o'tkazish
+    // Taymer hisoblagichi va Host uchun avtomatik bosqich o'tkazish (retry bilan)
     useEffect(() => {
         if (!room?.phase_ends_at || room.phase === 'LOBBY' || room.phase === 'GAME_OVER') {
             setTimeLeft(0);
             return;
         }
 
-        advancingRef.current = false;
+        let lastCallTime = 0;
 
-        const interval = setInterval(() => {
+        const interval = setInterval(async () => {
             const diff = Math.max(0, Math.ceil((new Date(room.phase_ends_at).getTime() - Date.now()) / 1000));
             setTimeLeft(diff);
 
-            if (diff === 0 && room.host_user_id === userId && !advancingRef.current) {
-                advancingRef.current = true;
-                supabase.rpc('advance_phase', { p_room_id: roomId });
+            if (diff === 0 && room.host_user_id === userId) {
+                const now = Date.now();
+                if (now - lastCallTime > 1500) {
+                    lastCallTime = now;
+                    const { error } = await supabase.rpc('advance_phase', { p_room_id: roomId });
+                    if (error) console.error('Bosqich o‘tishda xato:', error.message);
+                }
             }
-        }, 250);
+        }, 300);
 
         return () => clearInterval(interval);
     }, [room?.phase, room?.phase_ends_at, room?.host_user_id, roomId, userId]);
